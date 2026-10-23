@@ -25,6 +25,30 @@ MedBridge gives patients a simple way to find a doctor, book a time slot, messag
 
 The whole app runs on the **free Firebase Spark plan**: no Cloud Functions and no Firebase Storage are needed.
 
+## Screenshots
+
+### Patient
+
+<table>
+  <tr>
+    <td align="center" width="20%"><img src="assets/screenshots/01_login.jpg" alt="Login" /><br /><sub><b>Login</b></sub></td>
+    <td align="center" width="20%"><img src="assets/screenshots/02_patient_home.jpg" alt="Patient home" /><br /><sub><b>Home</b></sub></td>
+    <td align="center" width="20%"><img src="assets/screenshots/03_book_appointment.jpg" alt="Book appointment" /><br /><sub><b>Book appointment</b></sub></td>
+    <td align="center" width="20%"><img src="assets/screenshots/04_chat.jpg" alt="Chat" /><br /><sub><b>Chat</b></sub></td>
+    <td align="center" width="20%"><img src="assets/screenshots/05_patient_invoices.jpg" alt="Invoices" /><br /><sub><b>Invoices</b></sub></td>
+  </tr>
+</table>
+
+### Doctor
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="assets/screenshots/06_doctor_requests.jpg" alt="Appointment requests" /><br /><sub><b>Appointment requests</b></sub></td>
+    <td align="center" width="33%"><img src="assets/screenshots/07_set_availability.jpg" alt="Set availability" /><br /><sub><b>Set availability</b></sub></td>
+    <td align="center" width="33%"><img src="assets/screenshots/08_doctor_invoices.jpg" alt="Billing and invoices" /><br /><sub><b>Billing and invoices</b></sub></td>
+  </tr>
+</table>
+
 ## Features
 
 ### For patients
