@@ -13,6 +13,7 @@ A smart healthcare appointment and medical records app that connects patients an
 ![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore%20%7C%20FCM-FFCA28?logo=firebase&logoColor=black)
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20Web-0E7C86)
 ![Plan](https://img.shields.io/badge/Firebase%20plan-Spark%20(free)-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
 </div>
 
@@ -212,7 +213,7 @@ Issues and pull requests are welcome. Run `flutter analyze` and `flutter test` b
 
 ## License
 
-No license has been added yet. Add a `LICENSE` file to state how others may use this project.
+Released under the [MIT License](LICENSE).
 
 ---
 
