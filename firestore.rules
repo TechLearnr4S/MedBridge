@@ -1,0 +1,213 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function myDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function myRole() { return myDoc().role; }
+    function isDoctor() { return signedIn() && myRole() == 'doctor'; }
+    function isAdmin()  { return signedIn() && myRole() == 'admin';  }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (
+        request.auth.uid == uid || isDoctor() || isAdmin()
+      );
+      allow create: if signedIn()
+                    && request.auth.uid == uid
+                    && request.resource.data.role in ['patient', 'doctor'];
+      allow update: if signedIn() && (
+        (request.auth.uid == uid
+         && request.resource.data.role == resource.data.role)
+        || isAdmin()
+      );
+      match /fcmTokens/{tokenId} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    match /doctors/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && (
+        (request.auth.uid == id && isDoctor())
+        || isAdmin()
+      );
+      // Patients recalculating the average after submitting a review may
+      // change ONLY rating and reviewCount.
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['rating', 'reviewCount'])
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 0
+        && request.resource.data.rating <= 5
+        && request.resource.data.reviewCount is int
+        && request.resource.data.reviewCount >= 0;
+    }
+
+    match /appointments/{id} {
+      allow read: if signedIn() && (
+        resource.data.patientId == request.auth.uid
+        || resource.data.doctorId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if signedIn()
+                    && request.resource.data.patientId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update: if signedIn() && (
+        resource.data.patientId == request.auth.uid
+        || resource.data.doctorId == request.auth.uid
+        || isAdmin()
+      );
+    }
+
+    match /bookedSlots/{id} {
+      allow read, create, delete: if signedIn();
+    }
+
+    match /records/{id} {
+      allow read: if signedIn() && (
+        resource.data.patientId == request.auth.uid
+        || isDoctor()
+        || isAdmin()
+      );
+      allow create: if signedIn()
+                    && request.resource.data.addedBy == request.auth.uid
+                    && (request.resource.data.patientId == request.auth.uid || isDoctor());
+      allow delete: if signedIn() && resource.data.addedBy == request.auth.uid;
+    }
+
+    match /healthMetrics/{id} {
+      allow read: if signedIn() && (
+        resource.data.patientId == request.auth.uid
+        || isDoctor()
+        || isAdmin()
+      );
+      allow create: if signedIn()
+                    && request.resource.data.patientId == request.auth.uid;
+      allow update, delete: if signedIn()
+                            && resource.data.patientId == request.auth.uid;
+    }
+
+    match /prescriptions/{id} {
+      allow read: if signedIn() && (
+        resource.data.patientId == request.auth.uid
+        || resource.data.doctorId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isDoctor()
+                    && request.resource.data.doctorId == request.auth.uid;
+    }
+
+    match /notifications/{id} {
+      allow read, update, delete: if signedIn()
+                                  && resource.data.userId == request.auth.uid;
+      allow create: if signedIn();
+    }
+
+    // ---- chats -----------------------------------------------------------
+    // chatId = "<smallerUid>_<largerUid>"; participants is stored sorted.
+    function roleOf(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+    function isChatMember(data) {
+      return signedIn() && request.auth.uid in data.participants;
+    }
+    function validNewChat(chatId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['participants', 'patientId', 'doctorId',
+               'participantNames', 'lastMessage', 'lastSenderId',
+               'lastTimestamp', 'unreadCounts', 'createdAt', 'updatedAt'])
+        && d.participants is list
+        && d.participants.size() == 2
+        && d.participants[0] < d.participants[1]
+        && chatId == d.participants[0] + '_' + d.participants[1]
+        && request.auth.uid in d.participants
+        && d.patientId is string && d.doctorId is string
+        && d.patientId != d.doctorId
+        && d.participants.hasAll([d.patientId, d.doctorId])
+        && roleOf(d.patientId) == 'patient'
+        && roleOf(d.doctorId) == 'doctor'
+        && d.lastMessage == ''
+        && d.createdAt == request.time;
+    }
+
+    match /chats/{chatId} {
+      // get also allowed for a missing doc so clients can test existence
+      // before creating it; list queries must filter on participants.
+      allow get: if signedIn() && (
+        resource == null || request.auth.uid in resource.data.participants
+        || isAdmin()
+      );
+      allow list: if signedIn() && (
+        request.auth.uid in resource.data.participants || isAdmin()
+      );
+      allow create: if signedIn() && validNewChat(chatId);
+      // Participants may only touch thread metadata, never who is in it.
+      allow update: if isChatMember(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+             'lastMessage', 'lastSenderId', 'lastTimestamp', 'unreadCounts',
+             'participantNames', 'updatedAt']);
+      allow delete: if false;
+
+      match /messages/{msgId} {
+        function parent() {
+          return get(/databases/$(database)/documents/chats/$(chatId)).data;
+        }
+
+        allow read: if signedIn() && (
+          request.auth.uid in parent().participants || isAdmin()
+        );
+
+        allow create: if signedIn()
+          && request.auth.uid in parent().participants
+          && request.resource.data.keys().hasOnly(['senderId', 'senderName',
+               'recipientId', 'text', 'imageBase64', 'timestamp', 'isRead'])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.recipientId in parent().participants
+          && request.resource.data.recipientId != request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.senderName is string
+          && request.resource.data.timestamp == request.time
+          && request.resource.data.isRead == false
+          && (request.resource.data.text.size() > 0
+              || 'imageBase64' in request.resource.data)
+          && (!('imageBase64' in request.resource.data)
+              || (request.resource.data.imageBase64 is string
+                  && request.resource.data.imageBase64.size() < 700000));
+
+        // The recipient (not the sender) may only flip isRead.
+        allow update: if signedIn()
+          && request.auth.uid in parent().participants
+          && resource.data.senderId != request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['isRead']);
+
+        allow delete: if signedIn()
+          && request.auth.uid in parent().participants
+          && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    match /reviews/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.patientId == request.auth.uid;
+    }
+
+    match /invoices/{id} {
+      allow read: if signedIn() && (
+        resource.data.patientId == request.auth.uid
+        || resource.data.doctorId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if signedIn() && (isDoctor() || isAdmin());
+      allow update: if signedIn() && (
+        resource.data.patientId == request.auth.uid
+        || resource.data.doctorId == request.auth.uid
+        || isAdmin()
+      );
+    }
+  }
+}

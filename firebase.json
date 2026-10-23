@@ -1,0 +1,25 @@
+{
+    "flutter":  {
+                    "platforms":  {
+                                      "android":  {
+                                                      "default":  {
+                                                                      "projectId":  "medbridge-431fd",
+                                                                      "appId":  "1:79689077912:android:77fd737a87d712aa1aeced",
+                                                                      "fileOutput":  "android/app/google-services.json"
+                                                                  }
+                                                  },
+                                      "dart":  {
+                                                   "lib/firebase_options.dart":  {
+                                                                                     "projectId":  "medbridge-431fd",
+                                                                                     "configurations":  {
+                                                                                                            "android":  "1:79689077912:android:77fd737a87d712aa1aeced",
+                                                                                                            "web":  "1:79689077912:web:c57bb293f91396371aeced"
+                                                                                                        }
+                                                                                 }
+                                               }
+                                  }
+                },
+    "firestore":  {
+                      "rules":  "firestore.rules"
+                  }
+}

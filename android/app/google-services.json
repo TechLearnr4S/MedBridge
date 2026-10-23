@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "79689077912",
+    "project_id": "medbridge-431fd",
+    "storage_bucket": "medbridge-431fd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79689077912:android:77fd737a87d712aa1aeced",
+        "android_client_info": {
+          "package_name": "com.medbridge.medbridge"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "79689077912-0fqvfk97cpfc5qidqmq8rrf342e4o7eu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQD74lZBnS0abE7IxPM-ptQpH2MSuzUd8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "79689077912-0fqvfk97cpfc5qidqmq8rrf342e4o7eu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
